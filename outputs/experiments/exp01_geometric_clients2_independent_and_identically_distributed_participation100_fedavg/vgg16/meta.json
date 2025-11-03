@@ -1,0 +1,13 @@
+{
+  "clients": 2,
+  "distribution": "Independent and Identically Distributed",
+  "distribution_definition": "Each client has data randomly sampled from the same overall distribution. Example: if the global dataset has 10 classes, each client has a balanced mix of all 10 classes. ",
+  "participation": 1.0,
+  "method": "FedAvg",
+  "client_shard_sizes": [
+    1267,
+    1266
+  ],
+  "server_val_size": 543,
+  "test_size": 543
+}
