@@ -1,0 +1,14 @@
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+scikit-image
+torch
+torchvision
+timm
+opencv-python-headless
+tqdm
+joblib
+reportlab
+kagglehub

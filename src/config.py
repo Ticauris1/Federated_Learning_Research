@@ -1,108 +1,94 @@
 # ===================================================================
 # Standard Library Imports
 # ===================================================================
+import copy
+import csv
+import importlib
 import os
 import random
 import sys
-import copy
-import importlib
 import time
 import warnings
 from collections import OrderedDict
 from contextlib import nullcontext
+from math import ceil
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from sklearn.feature_selection import VarianceThreshold
-import csv
-from math import ceil
+
 # ===================================================================
 # Third-Party Library Imports
 # ===================================================================
 
 # ---- Core Scientific Libraries ----
-import numpy as np
-import pandas as pd
-from joblib import Memory
-from matplotlib.transforms import ScaledTranslation
+import numpy as np # type: ignore
+import pandas as pd # type: ignore
+
 # ---- Visualization ----
-import matplotlib.pyplot as plt
-import seaborn as sns
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.pyplot as plt # type: ignore
+import seaborn as sns # type: ignore
+from matplotlib.transforms import ScaledTranslation # type: ignore
+from mpl_toolkits.axes_grid1 import make_axes_locatable # type: ignore
 
 # ---- Image Processing ----
-from PIL import Image
-from skimage.feature import hog
+from PIL import Image # type: ignore
+from skimage.feature import hog # type: ignore
 
 # ---- PyTorch / Deep Learning ----
-import torch
-import torch.nn as nn
-from torch.optim import AdamW, Optimizer 
-from torch.utils.data import DataLoader, Dataset
-from torchvision import transforms
+import torch # type: ignore
+import torch.nn as nn # type: ignore
+from torch.optim import AdamW, Optimizer # type: ignore
+from torch.utils.data import DataLoader, Dataset # type: ignore
+from torchvision import transforms # type: ignore
 
 # ---- Scikit-learn ----
-from sklearn.base import clone
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.decomposition import PCA, KernelPCA
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.base import clone # type: ignore
+from sklearn.calibration import CalibratedClassifierCV # type: ignore
+from sklearn.decomposition import PCA, KernelPCA # type: ignore
+from sklearn.ensemble import RandomForestClassifier # type: ignore
+from sklearn.feature_selection import VarianceThreshold # type: ignore
+from sklearn.linear_model import LogisticRegression # type: ignore
 from sklearn.metrics import (
-    ConfusionMatrixDisplay,
-    accuracy_score,
-    auc,
-    classification_report,
-    confusion_matrix,
-    f1_score,
-    log_loss,
-    roc_auc_score,
-    roc_curve,
-)
+    ConfusionMatrixDisplay, accuracy_score, auc, classification_report,
+    confusion_matrix, f1_score, log_loss, roc_auc_score, roc_curve
+) # type: ignore
 from sklearn.model_selection import (
-    GridSearchCV,
-    ParameterGrid,
-    StratifiedKFold,
-    cross_validate,
-    learning_curve,
-    train_test_split,
+    GridSearchCV, ParameterGrid, StratifiedKFold, cross_validate,
+    learning_curve, train_test_split
 )
-from sklearn.naive_bayes import GaussianNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.pipeline import FeatureUnion, Pipeline
+from sklearn.naive_bayes import GaussianNB # type: ignore
+from sklearn.neighbors import KNeighborsClassifier # type: ignore
+from sklearn.pipeline import FeatureUnion, Pipeline # type: ignore
 from sklearn.preprocessing import (
-    FunctionTransformer,
-    LabelEncoder,
-    PowerTransformer,
-    QuantileTransformer,
-    StandardScaler,
-    label_binarize,
-)
-from sklearn.svm import SVC, LinearSVC
-import os, math
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import label_binarize
-from sklearn.metrics import roc_curve, auc
+    FunctionTransformer, LabelEncoder, PowerTransformer, QuantileTransformer,
+    StandardScaler, label_binarize
+) # type: ignore
+from sklearn.svm import SVC, LinearSVC # type: ignore
+
+# ---- Other Utilities ----
+from joblib import Memory # type: ignore
+
 # ===================================================================
 # Optional / Guarded Imports
 # ===================================================================
 try:
     from tqdm.auto import tqdm  # Works in notebooks & terminals
 except ImportError:
-    from tqdm import tqdm
+    from tqdm import tqdm # type: ignore
+
 try:
-    import cv2
+    import cv2 # type: ignore
 except ImportError:
     cv2 = None
+
 try:
     import timm  # For pretrained CNN models
 except ImportError:
     timm = None
+
 try:
     # Optional: Keras for image I/O and augmentation
     from tensorflow.keras.preprocessing.image import (
-        ImageDataGenerator,
-        img_to_array,
-        load_img,
+        ImageDataGenerator, img_to_array, load_img
     )
 except ImportError:
     ImageDataGenerator = None
@@ -158,6 +144,7 @@ set_seed(RANDOM_STATE)
 
 ## File Paths
 # -------------------------------------------------------------------
+'''
 if ON_COLAB:
     # Assumes dataset is uploaded to the Colab environment
     ORIG_ROOT = Path("/content/Cotton Disease")
@@ -169,6 +156,15 @@ else:
     ORIG_ROOT = LOCAL_PROJECT_ROOT / "Cotton Disease"
     GEOM_ROOT = LOCAL_PROJECT_ROOT / "augmented_cotton_dataset_v2"
     SAVE_DIR = LOCAL_PROJECT_ROOT / "results"
+'''
+
+ORIG_ROOT = Path("/data/Cotton Disease")
+GEOM_ROOT = Path("/data/augmented_cotton_dataset_v2")
+SAVE_DIR = Path("/results")
+
+# This part stays mostly the same
+DATASETS = {"Original": ORIG_ROOT, "Geometric": GEOM_ROOT}
+SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
 DATASETS = {"Original": ORIG_ROOT, "Geometric": GEOM_ROOT}
 SAVE_DIR.mkdir(parents=True, exist_ok=True) # Ensure save directory exists
@@ -207,7 +203,7 @@ UNFREEZE_SCHEDULE = {10: 1, 20: 2}
 
 ## Federated Learning Settings
 # -------------------------------------------------------------------
-FED_ROUNDS = 10 # Total communication rounds
+FED_ROUNDS = 2 # Total communication rounds
 FED_CLIENTS_PER_ROUND = 5 # Clients sampled per round
 FED_LOCAL_EPOCHS = 5 # Local epochs per client
 FED_LEARNING_RATE = 1e-3 # Learning rate for local client updates
