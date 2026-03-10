@@ -177,6 +177,25 @@ def federated_averaging_training(
         global_history['accuracy'].append(g_acc)
         print(f"Round {comm_round+1} | Server (on server-val) acc: {g_acc*100:.2f}%")
 
+    final_client_cms = {}
+    for ci, loaders in enumerate(client_dataloaders):
+        cm_loss, cm_acc, cm, _ = epoch_eval_fed(
+            global_model, loaders['train'], nn.CrossEntropyLoss(), device
+        )
+        final_client_cms[ci] = cm
+
+        # ---- NEW: Build client_pairs for panel plots / per-client ROC ----
+    client_pairs = []
+    criterion = nn.CrossEntropyLoss()
+    for ci, loaders in enumerate(client_dataloaders):
+        eval_loader = loaders.get("test", None) or test_loader
+        _, _, y_true_c, probs_c = epoch_eval_fed(global_model, eval_loader, criterion, device)
+        client_pairs.append((y_true_c, probs_c))
+
+    # ---- Return EXACTLY what main.py expects to unpack ----
+    return global_model, global_history, client_histories, final_client_cms, last_local_state, client_pairs
+
+
 def federated_training_traditional_ensemble(model_template, client_dataloaders, server_val):
     print(f"Starting federated training (ensemble) for {type(model_template).__name__}...")
     X_sv, y_sv = server_val

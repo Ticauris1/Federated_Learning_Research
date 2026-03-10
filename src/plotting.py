@@ -411,37 +411,96 @@ def plot_col_cms(
     suptitle_fs=18, resource_label=None, cm_cmap="Blues"
 ):
     """Plots [Server, Client 1, Client 2, ...] as a single vertical column."""
-    server_cm    = experiment["server_cm"]
-    client_cms   = list(experiment.get("client_cms", []))
+    import os
+    import string
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import confusion_matrix
+
+    server_cm = np.asarray(experiment["server_cm"], dtype=int)
+    client_cms_raw = list(experiment.get("client_cms", []))
     class_labels = experiment.get("class_labels")
-    model_name   = experiment.get("model_name", "Model")
-    source_name  = experiment.get("source_name", "Dataset")
+    model_name = experiment.get("model_name", "Model")
+    source_name = experiment.get("source_name", "Dataset")
+
+    n_classes = len(class_labels) if class_labels is not None else None
+
+    client_cms = []
+    for idx, entry in enumerate(client_cms_raw):
+        # Case 1: already a confusion matrix
+        if isinstance(entry, np.ndarray) and entry.ndim == 2:
+            cm = np.asarray(entry, dtype=int)
+
+        # Case 2: tuple/list like (y_true, y_prob) or (y_true, y_pred)
+        elif isinstance(entry, (tuple, list)) and len(entry) == 2:
+            y_true, y_second = entry
+            y_true = np.asarray(y_true)
+            y_second = np.asarray(y_second)
+
+            if y_second.ndim == 2:
+                y_pred = np.argmax(y_second, axis=1)
+            elif y_second.ndim == 1:
+                y_pred = y_second
+            else:
+                raise ValueError(
+                    f"Unsupported client entry format at index {idx}: "
+                    f"second item shape={y_second.shape}"
+                )
+
+            labels = np.arange(n_classes) if n_classes is not None else np.unique(np.concatenate([y_true, y_pred]))
+            cm = confusion_matrix(y_true, y_pred, labels=labels).astype(int)
+
+        else:
+            arr = np.asarray(entry)
+            raise ValueError(
+                f"Client entry at index {idx} is not a valid confusion matrix or "
+                f"(y_true, y_prob)/(y_true, y_pred) pair. Got shape={arr.shape}"
+            )
+
+        if cm.ndim != 2:
+            raise ValueError(f"Client {idx} confusion matrix is not 2D. Got shape={cm.shape}")
+
+        client_cms.append(cm)
 
     n_clients = len(client_cms)
     nplots = 1 + n_clients
-    fig, axes = plt.subplots(nrows=nplots, ncols=1, figsize=(6.0, 4.6*nplots), dpi=dpi, squeeze=False)
+
+    fig, axes = plt.subplots(
+        nrows=nplots, ncols=1,
+        figsize=(6.0, 4.6 * nplots),
+        dpi=dpi, squeeze=False
+    )
     axes = axes.flatten()
     letters = list(string.ascii_lowercase)
-
     cfs = int(round(cell_fs))
 
     # Server
-    _draw_cm_compat(axes[0], server_cm, "Server (Global)", class_labels=class_labels, cmap=cm_cmap,
-                title_fs=18, label_fs=16, tick_fs_x=13, tick_fs_y=13, cbar_fs=14)
+    _draw_cm_compat(
+        axes[0], server_cm, "Server (Global)",
+        class_labels=class_labels, cmap=cm_cmap,
+        title_fs=18, label_fs=16, tick_fs_x=13, tick_fs_y=13, cbar_fs=14
+    )
     _bump_cm_cell_font(axes[0], anno_fs=cfs, color=None)
     _place_letter_bottom(axes[0], letters[0], fontsize=letter_fs, pad_pts=letter_pad_pts)
 
     # Clients
-    for i, cm in enumerate(client_cms, start=0): # Start from 0 for correct indexing
+    for i, cm in enumerate(client_cms, start=0):
         ax_idx = i + 1
-        _draw_cm_compat(axes[ax_idx], cm, f"Client {i+1}", class_labels=class_labels, cmap=cm_cmap,
-                    title_fs=18, label_fs=16, tick_fs_x=13, tick_fs_y=13, cbar_fs=14)
+        _draw_cm_compat(
+            axes[ax_idx], cm, f"Client {i+1}",
+            class_labels=class_labels, cmap=cm_cmap,
+            title_fs=18, label_fs=16, tick_fs_x=13, tick_fs_y=13, cbar_fs=14
+        )
         _bump_cm_cell_font(axes[ax_idx], anno_fs=cfs, color=None)
-        _place_letter_bottom(axes[ax_idx], letters[ax_idx if ax_idx < len(letters) else -1], fontsize=letter_fs, pad_pts=letter_pad_pts)
+        _place_letter_bottom(
+            axes[ax_idx],
+            letters[ax_idx if ax_idx < len(letters) else -1],
+            fontsize=letter_fs, pad_pts=letter_pad_pts
+        )
 
     fig.tight_layout(rect=[0, 0.18, 1, 0.97])
     fig.canvas.draw()
-    left  = min(ax.get_position().x0 for ax in axes)
+    left = min(ax.get_position().x0 for ax in axes)
     right = max(ax.get_position().x1 for ax in axes)
     center_x = (left + right) / 2.0
 
@@ -454,10 +513,19 @@ def plot_col_cms(
     )
     fig.suptitle(suptitle, fontsize=suptitle_fs, y=0.995, x=center_x, ha="center")
 
-    out_path = os.path.join(save_dir, filename or f"{source_name}_{model_name}_panel_confusion_matrices_col.png")
+    out_path = os.path.join(
+        save_dir,
+        filename or f"{source_name}_{model_name}_panel_confusion_matrices_col.png"
+    )
     _assert_and_log_save(fig, out_path)
     print(f"[panel] CM rows×cols: {nplots}×1  -> {out_path}")
     return out_path
+
+
+
+
+
+
 
 def plot_col_rocs(
     experiment, save_dir, dpi=180, filename=None,
@@ -757,3 +825,4 @@ def plot_row_rocs_panel(
     out = os.path.join(save_dir, filename or f"{first.get('source_name','Dataset')}_{first.get('model_name','Model')}_panel_ROC_server_and_clients_rows.png")
     _assert_and_log_save(fig, out)
     return out
+

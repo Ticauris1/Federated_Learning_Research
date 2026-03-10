@@ -5,7 +5,7 @@ This repository implements a federated learning framework that supports both dee
 
 Key Capabilities  
 Deep Learning Support — The system incorporates a flexible model wrapper that allows any timm backbone to be used as a federated model. Each model is constructed with a classifier head sized automatically from the backbone’s output. VGG-16 is handled via convolutional feature extraction to avoid overly large fully connected layers (see models.py).  
-Traditional Machine-Learning Support — The project contains multiple scikit-learn pipelines including SVM (RBF, Linear-SVC + calibration, KernelPCA variants), Random Forest, Naïve Bayes, and K-Nearest Neighbors. Each pipeline integrates preprocessing steps, including variance thresholding, scaling, PCA, and optional HOG and color histogram features (see ml_pipeline.py and ml_features.py).  
+Traditional Machine-Learning Support — The project contains multiple scikit-learn pipelines, including SVM (RBF, Linear-SVC + calibration, KernelPCA variants), Random Forest, Naïve Bayes, and K-Nearest Neighbors. Each pipeline includes preprocessing steps, such as variance thresholding, scaling, PCA, and optional HOG and color histogram features (see ml_pipeline.py and ml_features.py).  
 Federated Learning Algorithms — The federated training utilities implement FedAvg, FedProx, federated ensemble for traditional models, and linear federated aggregation. These implementations manage client selection, model distribution, local training, server-side evaluation, and aggregation of weights or probability outputs (see federated_utils.py).  
 Experiment & Evaluation Tools — The system includes tools for computing AUC, ROC curves, probability distributions, and aggregating client test results. It generates confusion matrices, multi-class ROC visualisations, federated accuracy curves, per-client performance panels, and server-client overlays—suitable for both deep and traditional models (see experiment_utils.py and plotting.py).
 
@@ -44,7 +44,7 @@ This repository illustrates a complete engineering workflow for federated machin
 • All computations, metrics, and visualisations are automated.  
 • The codebase separates concerns across model construction, federated algorithm implementation, experiment management, and plotting subsystems.
 
-This project demonstrates federated learning systems engineering, deep-learning integration, model interoperability, and large-scale experimentation.
+This project demonstrates systems engineering for federated learning, deep-learning integration, model interoperability, and large-scale experimentation.
 
 Author  
 Ticauris “Ti” Stokes  

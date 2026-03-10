@@ -54,7 +54,7 @@ from sklearn.metrics import (
 from sklearn.model_selection import (
     GridSearchCV, ParameterGrid, StratifiedKFold, cross_validate,
     learning_curve, train_test_split
-)
+) # type: ignore
 from sklearn.naive_bayes import GaussianNB # type: ignore
 from sklearn.neighbors import KNeighborsClassifier # type: ignore
 from sklearn.pipeline import FeatureUnion, Pipeline # type: ignore
@@ -142,32 +142,34 @@ ON_MAC = sys.platform == "darwin"
 RANDOM_STATE = 42
 set_seed(RANDOM_STATE)
 
-## File Paths
-# -------------------------------------------------------------------
-'''
-if ON_COLAB:
-    # Assumes dataset is uploaded to the Colab environment
-    ORIG_ROOT = Path("/content/Cotton Disease")
-    GEOM_ROOT = Path("/content/augmented_cotton_dataset_v2")
-    SAVE_DIR = Path("/content/drive/MyDrive/dr_partha_research_results/final_run")
-else:
-    # Update this path to your local machine's project directory
-    LOCAL_PROJECT_ROOT = Path.home() / "Desktop/research_src"
-    ORIG_ROOT = LOCAL_PROJECT_ROOT / "Cotton Disease"
-    GEOM_ROOT = LOCAL_PROJECT_ROOT / "augmented_cotton_dataset_v2"
-    SAVE_DIR = LOCAL_PROJECT_ROOT / "results"
-'''
 
-ORIG_ROOT = Path("/data/Cotton Disease")
-GEOM_ROOT = Path("/data/augmented_cotton_dataset_v2")
-SAVE_DIR = Path("/results")
+from pathlib import Path
 
-# This part stays mostly the same
-DATASETS = {"Original": ORIG_ROOT, "Geometric": GEOM_ROOT}
+# -------------------------------------------------
+# Project root (one level above src/)
+# -------------------------------------------------
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+print(f"Project Root: {PROJECT_ROOT}")
+# -------------------------------------------------
+# Dataset paths (adjust if your data lives elsewhere)
+# -------------------------------------------------
+ORIG_ROOT = PROJECT_ROOT / "data" / "Cotton Disease"
+GEOM_ROOT = PROJECT_ROOT / "data" / "augmented_cotton_dataset_v2"
+
+# -------------------------------------------------
+# Results / experiment output
+# -------------------------------------------------
+SAVE_DIR = PROJECT_ROOT / "results"
 SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
-DATASETS = {"Original": ORIG_ROOT, "Geometric": GEOM_ROOT}
-SAVE_DIR.mkdir(parents=True, exist_ok=True) # Ensure save directory exists
+# -------------------------------------------------
+# Dataset registry
+# -------------------------------------------------
+DATASETS = {
+    "Original": ORIG_ROOT,
+    "Geometric": GEOM_ROOT,
+}
+
 
 ## Run Control and Dataset Selection
 # -------------------------------------------------------------------
@@ -203,9 +205,9 @@ UNFREEZE_SCHEDULE = {10: 1, 20: 2}
 
 ## Federated Learning Settings
 # -------------------------------------------------------------------
-FED_ROUNDS = 2 # Total communication rounds
-FED_CLIENTS_PER_ROUND = 5 # Clients sampled per round
-FED_LOCAL_EPOCHS = 5 # Local epochs per client
+FED_ROUNDS = 10 # Total communication rounds
+FED_CLIENTS_PER_ROUND = 1 # Clients sampled per round
+FED_LOCAL_EPOCHS = 2 # Local epochs per client
 FED_LEARNING_RATE = 1e-3 # Learning rate for local client updates
 USE_STRATIFIED_CLIENT_SPLITS = True # Ensure clients get a mix of classes
 
